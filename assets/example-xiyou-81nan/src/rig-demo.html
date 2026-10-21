@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>师徒四人 · 造型、骨骼与步态 demo</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #E9E1D0; font-family: "PingFang SC", "Hiragino Sans GB", sans-serif; color: #3A2E22; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+  #c { width: min(100vw, calc((100vh - 118px) * 16 / 9)); aspect-ratio: 16 / 9; display: block; box-shadow: 0 10px 40px rgba(60, 40, 20, .25); }
+  #ui { width: min(100vw, calc((100vh - 118px) * 16 / 9)); box-sizing: border-box; padding: 10px 6px 0; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; font-size: 13px; }
+  .grp { display: flex; gap: 4px; align-items: center; }
+  .grp b { font-weight: 600; margin-right: 4px; color: #7A6E5E; }
+  button { font: inherit; padding: 4px 10px; border: 1px solid #B9AC94; background: #F6F1E6; color: #3A2E22; border-radius: 4px; cursor: pointer; }
+  button.on { background: #A8261C; border-color: #A8261C; color: #fff; }
+</style>
+</head>
+<body>
+<canvas id="c" width="2560" height="1440"></canvas>
+<div id="ui"></div>
+<script src="core.js"></script>
+<script src="rig.js"></script>
+<script src="rig-demo.js"></script>
+</body>
+</html>
