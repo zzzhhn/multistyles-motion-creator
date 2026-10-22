@@ -1,0 +1,7 @@
+{
+  "name": "audio-tools-node",
+  "private": true,
+  "description": "Offline Faust hall reverb (re.jpverb) for the sample-based score builds",
+  "license": "MIT",
+  "dependencies": { "@grame/faustwasm": "^0.19.0" }
+}

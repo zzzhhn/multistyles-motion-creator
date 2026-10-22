@@ -81,3 +81,75 @@ XY.STYLES.<style> = {
 6. 配乐：重写 `score-*.js`；`audio-v11.js` 里的开场和片尾是《八十一难》的专用写法，并且会校验最后一小节等于 `DURATION`，按新时长改。
 7. `src/styles/`：81 个画风文件都是这部片子专用的，新项目可以参考其中的渲染手法（例如 `rimpa.js` 金屏风、`ascii.js` 字符画亮度缓冲、`shinkai.js` 密度场积云和赛璐珞阴影、`oracle.js` 刻痕线）。
 8. 工具通过 `tools/pw.cjs` 找 playwright-core（依次试环境变量 `PLAYWRIGHT_CORE`、普通 `require`、全局 `@playwright/cli` 安装），用 `channel: 'chrome'`。
+
+---
+
+# 第二套引擎：同一处过一年（`assets/example-jieqi-24/`）
+
+《二十四节气》用的是固定构图、换画风的骨架，引擎在 `artlock/` 下（Art Lock 页和成片共用同一套画风文件）。和第一套的区别：没有画廊墙和镜头横移；主体由故事轨统一计算（`10-story.md`）；过渡由现象带入；标题由引擎统一画。起新项目用 `scripts/new_project.sh <目录> jieqi`。
+
+## 文件地图
+
+| 文件 | 管什么 |
+|---|---|
+| `core.js` | 命名空间 `JQ`、设计画布 1920×1080、种子随机 `hash/rng/noise/fbm`、缓动、离屏层 `JQ.layer`、静态缓存 `JQ.cached`、竖排字 |
+| `terms.js` | 单元表 `JQ.TERMS`（名、季、三候、画风、要点、记忆点、关键候 `keyHou`） |
+| `scene.js` `scene2.js` | 固定构图合约：每样景物的点列和 Path2D（山、田、犁沟、池塘、溪、桥、树干、树枝、树冠、院墙、门楼、屋顶……）和关键坐标 `JQ.L` |
+| `figures.js` | 早期的娃和牛（Art Lock 用），几何工具 `JQ._fig`，按 role 上色 `JQ.drawParts` 和 role 回退 `JQ.ROLE_FALLBACK` |
+| `figures2.js` | 一家人的骨架（成人、孩子）和姿势库（走、跑、犁、牵、撒种、锄、割、挑、坐、蹲、跪、扫、打连枷、端、挥手……） |
+| `figures3.js` | 会长大的小牛、牛的挽具锚点、农具（犁、锄、镰、篮、扁担水桶、连枷、扫帚、蒲扇、碗、柳条、红绸、风筝、碌碡、麦捆、草垛、春联、灯笼） |
+| `storydata.js` `storydata2.js` | 故事轨数据：24 个单元每个主体的关键帧 `JQ.STORY_KEYS`、道具 `JQ.STORY_PROPS` |
+| `story.js` `story2.js` | 故事运行时：`JQ.storyState(n, lt)`、`JQ.cast(n, lt)`、`JQ.castFor(Sx, t)`、`JQ.drawCastFor(g, Sx, t, pen)` |
+| `styles/sNN.js` | 24 个画风；`styles.js` 按顺序加载，缺的退回占位卡 |
+| `flat.js` | 中性平涂布局（调试、占位卡、`castsheet` 的底图） |
+| `film.js` | 时间线、镜头轻推、过渡合成、标题卡调用、`window.__renderAt` |
+| `trans.js` | 现象过渡 `JQ.transMask(n, p, SC)` → `{ path, overlay }` |
+| `titles.js` | 标题卡 `JQ.titleCard(g, n, lt, Sx)`，按单元调位置 `JQ.TITLE_POS` |
+| `ring.js` `film2.js` | 片头片尾：日晷节气盘、月洞门、穿门推近 |
+| `platform.js` | 9:16 和 1:1：整幅画面不裁，上方大标题、下方节气盘或进度条 |
+| `score-jq2.js` `audio-jq2.js` `audio/` | 配乐谱面（五音调式）、读取预渲染 WAV 的页面接口、署名（WAV 由 `tools/render-score2.sh` 生成，不在仓库里） |
+| `runtime.js` | 播放和导出（同第一套），另支持 `?from=a&to=b` 区间导出（画面和配乐一起裁） |
+| `index.html` `page.js` `page.css` `render.html` | Art Lock 页和工具渲染页 |
+
+## 时间结构
+
+- 90 BPM；片头 4 小节（10.667 秒），每个单元 3 小节（8 秒，一候一小节），片尾 5 小节；`?loop=1` 去掉片头片尾、72 小节首尾相接。
+- 单元的记忆点（落点）在关键候那一小节的第三拍：`impact = keyHou × 8/3 + 4/3` 秒。配乐在这一刻打钟加渐强。
+- 引擎传给画风的时间夹在 0 到 9：进来的画风在过渡里停在开场状态，出去的画风继续跑到约 8.85 秒。真实单元时间在 `Sx.lt`（负数或大于 8），只给故事轨用。
+
+## 画风合约
+
+```js
+JQ.ART[n] = {
+  key: impact,                       // 落点时刻，缩略图和检查用
+  keyHou: 0 | 1 | 2,
+  focus: [[x1, y1], [x2, y2], [x3, y3]],   // 三候事件的位置；镜头每候向它轻推（8 秒推到 1.035 倍），
+                                           // 现象过渡不用它，老的生长遮罩从 focus[0] 长出
+  frame: false,                      // 画风自带边框、绫边、挂屏框时填 true，镜头不动
+  draw(g, t, Sx) { ... },            // g 已缩放到设计坐标；人物每帧用 JQ.castFor(Sx, t) 取
+};
+```
+
+## 过渡、标题、片头（这一轮新加，都在引擎里，各画风不用管）
+
+- **过渡**：边界前 0.45 秒到边界后 0.85 秒，新画风画在 `transMask` 给的形状里，现象层叠在上面；最后 20 % 统一交叉淡化并淡出现象层（之前有两种过渡在收尾整屏一跳，`11-error-analysis.md` T2）。新增一种现象只要在 `trans.js` 里加一个分支，并在 `JQ.TRANS` 里指给对应单元。
+- **标题卡**：每个单元 0.15 到 2.25 秒，天空中部展开一条纸条，写名字、序号、日期、三候和季节印。纸条自带纸底和投影，任何画风上都清楚。和画风自带文字冲突时，在 `JQ.TITLE_POS` 里给这个单元另设位置；平台页把它关掉（上方已有大标题）。
+- **片头**：太阳固定在正上方，节气盘在它下面转一年；扇区先是水墨线稿（缩略图去色加强对比），太阳经过时才上色；盘心月洞门里依次翻过 24 种画风；最后镜头以月洞门为中心（也是画面中心）按对数插值推近，穿门进入第一个单元。**缩放中心和目标必须是同一个点**，否则推近一半画面会漂（v1 落点偏到雨水和惊蛰）。
+- **片尾**：从最后一个单元拉回节气盘，太阳走回第一个节气，月洞门里出题字和署名（窄容器里的字要量宽、超了就折行）。
+
+## 工具（`tools/`，从工程根目录运行）
+
+| 命令 | 用途 |
+|---|---|
+| `node tools/shot.cjs <n\|all> [t] [宽]` | 画风单帧；`all` 出 6×4 总览，查确定性 |
+| `node tools/unitsheet.cjs <n,...>` | 单元 8 帧拼图、2560 宽帧时、落点帧确定性、注册字段检查 |
+| `node tools/storycheck.cjs` | 故事轨连续性（位置、朝向、卧站、滑步、未知道具） |
+| `node tools/castsheet.cjs 1-24` | 中性底图上的故事预览，每单元 5 个时刻 |
+| `node tools/fstill.cjs t1,t2 前缀 宽 [query]` | 成片任意时刻静帧；`PAGE=platform.html` 看平台版 |
+| `node tools/pageshot.cjs` | Art Lock 页截图（首屏、全页、放大框、导出意见） |
+| `node tools/scorecheck.cjs` | 谱面检查（调式内音、拍数、落点有旋律起音、独奏音域、力度上限、季节动机） |
+| `zsh tools/render-score2.sh` | 一条命令从谱面到两条 WAV（需要 `$AUDIO_TOOLS`，见 `06-music.md`） |
+| `node tools/export.cjs artlock/film.html out.mp4` | 同第一套；`EXPORT_Q='loop=1'`、`'profile=9x16'`、`'from=8&to=20'` |
+| `python -I scripts/scan.py out.mp4` | 全片帧差扫描，看过渡收尾有没有一跳 |
+
+平台页 `platform.html` 要和 `film.html` 用同一份脚本列表（第一次手抄漏了乐器脚本，竖版方版没有音轨）：改了 `film.html` 的脚本就同步改，或者照第一套的 `mkplatform.cjs` 生成。

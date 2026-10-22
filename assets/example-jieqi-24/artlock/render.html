@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>render</title>
+<style>html,body{margin:0;background:#000}canvas{display:block}</style>
+<script src="core.js"></script><script src="terms.js"></script><script src="scene.js"></script><script src="scene2.js"></script>
+<script src="figures.js"></script><script src="figures2.js"></script><script src="figures3.js"></script><script src="storydata.js"></script><script src="storydata2.js"></script><script src="story.js"></script><script src="story2.js"></script><script src="flat.js"></script><script src="styles.js"></script>
+</head><body><canvas id="c"></canvas>
+<script>
+// Tool page: window.__render(n, t, width) draws style n (0 = flat debug) at time t; returns ms. Errors are reported, not thrown.
+const C = document.getElementById('c');
+window.__render = (n, t, w = 1920) => {
+  const h = Math.round(w * 9 / 16); C.width = w; C.height = h;
+  const g = C.getContext('2d'), S = { scale: w / JQ.W, W: JQ.W, H: JQ.H, n };
+  g.setTransform(S.scale, 0, 0, S.scale, 0, 0);
+  const A = n === 0 ? { key: 2, draw: (g, t, S) => JQ.flatScene(g, t, S) } : (JQ.ART[n] || (JQ.placeholder(n), JQ.ART[n]));
+  if (t == null) t = A.key || 0;
+  const t0 = performance.now();
+  try { g.save(); A.draw(g, t, S); g.restore(); } catch (e) { return { error: String(e && e.stack || e) }; }
+  return { ms: performance.now() - t0, placeholder: !!A.placeholder };
+};
+</script></body></html>

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>二十四节气 · Art Lock</title>
+<link rel="stylesheet" href="page.css">
+<script src="core.js"></script><script src="terms.js"></script><script src="scene.js"></script><script src="scene2.js"></script>
+<script src="figures.js"></script><script src="figures2.js"></script><script src="figures3.js"></script><script src="storydata.js"></script><script src="storydata2.js"></script><script src="story.js"></script><script src="story2.js"></script><script src="flat.js"></script><script src="styles.js"></script>
+</head><body>
+<header class="top">
+  <div>
+    <h1>二十四节气 · Art Lock<small>画风定稿</small></h1>
+    <p>同一个村口，一个节气一种画风，画面全部由代码渲染。点图放大，会播放这一节气记忆点的 4 秒小循环。每张选「锁定」「待改」「换掉」，有想法就写在备注里，最后点「导出意见」把整份意见复制给我。</p>
+  </div>
+  <div class="tally">
+    <span class="k-lock">锁定 <b id="n-lock">0</b></span><span class="k-fix">待改 <b id="n-fix">0</b></span>
+    <span class="k-drop">换掉 <b id="n-drop">0</b></span><span>未选 <b id="n-none">24</b></span>
+    <button class="btn primary" id="export">导出意见</button>
+  </div>
+</header>
+<main id="main"></main>
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="放大查看">
+  <canvas id="lbc"></canvas>
+  <div class="bar">
+    <div class="title"><b id="lb-name"></b><span id="lb-sub"></span></div>
+    <div class="seg" id="lb-seg"><button data-v="lock">锁定</button><button data-v="fix">待改</button><button data-v="drop">换掉</button></div>
+    <button class="btn" id="lb-play">暂停</button><button class="btn" id="lb-close">关闭</button>
+  </div>
+  <div class="hint">← → 切换　空格 播放／暂停　1 锁定　2 待改　3 换掉　Esc 关闭</div>
+</div>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="导出意见">
+  <div class="box">
+    <textarea id="out" readonly></textarea>
+    <div class="row"><span id="copied" class="hint"></span><button class="btn" id="m-close">关闭</button><button class="btn primary" id="m-copy">复制</button></div>
+  </div>
+</div>
+<script src="page.js"></script>
+</body></html>
